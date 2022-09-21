@@ -186,26 +186,21 @@ namespace M220N.Repositories
         /// <returns>A List of Movies</returns>
         public async Task<IReadOnlyList<Movie>> GetMoviesByGenreAsync(
             CancellationToken cancellationToken = default,
-            string sortKey = DefaultSortKey, int limit = DefaultMoviesPerPage,
-            int page = 0, params string[] genres)
+            string sortKey = DefaultSortKey,
+            int limit = DefaultMoviesPerPage,
+            int page = 0,
+            params string[] genres)
         {
-            var returnValue = new List<Movie>();
-
-            var sort = new BsonDocument(sortKey, DefaultSortOrder);
-
-            // TODO Ticket: Enable filtering of movies by genre.
-            // If you get stuck see the ``GetMoviesByCastAsync`` method above.
-            /*return await _moviesCollection
-               .Find(...)
-               .ToListAsync(cancellationToken);*/
+            var filter = Builders<Movie>.Filter.AnyIn(movie => movie.Genres, genres);
+            return await _moviesCollection
+                .Find(filter)
+                .ToListAsync();
 
             // // TODO Ticket: Paging
             // TODO Ticket: Paging
             // Modify the code you added in the Text and Subfield ticket to
             // include pagination. Refer to the other methods in this class
             // if you need a hint.
-
-            return returnValue;
         }
 
         /// <summary>
