@@ -28,6 +28,7 @@ namespace M220N.Models
 
         public List<string> Cast { get; set; }
 
+        [BsonElement("plot")]
         public string Plot { get; set; }
 
         [BsonElement("fullplot")]
