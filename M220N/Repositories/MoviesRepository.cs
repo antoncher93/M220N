@@ -114,15 +114,17 @@ namespace M220N.Repositories
             params string[] countries
             )
         {
-            // TODO Ticket: Projection - Search for movies by ``country`` and use projection to
-            // return only the ``Id`` and ``Title`` fields
-            //
-            //return await _moviesCollection
-            //   .Find(...)
-            //   .Project(...)
-            //   .ToListAsync(cancellationToken);
+            var searchFilter = Builders<Movie>.Filter.AnyIn(movie => movie.Countries, countries);
+            var projectionFilter = Builders<Movie>.Projection
+                .Include(movie => movie.Id)
+                .Include(movie => movie.Title);
+            var sort = Builders<Movie>.Sort.Descending(movie => movie.Title);
 
-            return null;
+            return await _moviesCollection
+                .Find(searchFilter)
+                .Sort(sort)
+                .Project<MovieByCountryProjection>(projectionFilter)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -184,26 +186,21 @@ namespace M220N.Repositories
         /// <returns>A List of Movies</returns>
         public async Task<IReadOnlyList<Movie>> GetMoviesByGenreAsync(
             CancellationToken cancellationToken = default,
-            string sortKey = DefaultSortKey, int limit = DefaultMoviesPerPage,
-            int page = 0, params string[] genres)
+            string sortKey = DefaultSortKey,
+            int limit = DefaultMoviesPerPage,
+            int page = 0,
+            params string[] genres)
         {
-            var returnValue = new List<Movie>();
-
-            var sort = new BsonDocument(sortKey, DefaultSortOrder);
-
-            // TODO Ticket: Enable filtering of movies by genre.
-            // If you get stuck see the ``GetMoviesByCastAsync`` method above.
-            /*return await _moviesCollection
-               .Find(...)
-               .ToListAsync(cancellationToken);*/
+            var filter = Builders<Movie>.Filter.AnyIn(movie => movie.Genres, genres);
+            return await _moviesCollection
+                .Find(filter)
+                .ToListAsync();
 
             // // TODO Ticket: Paging
             // TODO Ticket: Paging
             // Modify the code you added in the Text and Subfield ticket to
             // include pagination. Refer to the other methods in this class
             // if you need a hint.
-
-            return returnValue;
         }
 
         /// <summary>
