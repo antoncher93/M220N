@@ -136,8 +136,10 @@ namespace M220N.Repositories
         /// <param name="keywords">The keywords on which to search movies</param>
         /// <returns>A List of <see cref="MovieByTextProjection" /> objects</returns>
         public async Task<IReadOnlyList<MovieByTextProjection>> GetMoviesByTextAsync(
-            CancellationToken cancellationToken = default, int limit = DefaultMoviesPerPage,
-            int page = 0, params string[] keywords)
+            CancellationToken cancellationToken = default,
+            int limit = DefaultMoviesPerPage,
+            int page = 0,
+            params string[] keywords)
         {
             var project = new BsonDocument("score", new BsonDocument("$meta", "textScore"));
             var sort = new BsonDocument("score", new BsonDocument("$meta", "textScore"));
@@ -163,7 +165,9 @@ namespace M220N.Repositories
         public async Task<IReadOnlyList<Movie>> GetMoviesByCastAsync(
             CancellationToken cancellationToken = default,
             string sortKey = DefaultSortKey,
-            int limit = DefaultMoviesPerPage, int page = 0, params string[] cast)
+            int limit = DefaultMoviesPerPage,
+            int page = 0,
+            params string[] cast)
         {
             var sort = new BsonDocument(sortKey, DefaultSortOrder);
 
@@ -192,15 +196,13 @@ namespace M220N.Repositories
             params string[] genres)
         {
             var filter = Builders<Movie>.Filter.AnyIn(movie => movie.Genres, genres);
+            var sort = Builders<Movie>.Sort.Descending(movie => movie.Genres);
             return await _moviesCollection
                 .Find(filter)
-                .ToListAsync();
-
-            // // TODO Ticket: Paging
-            // TODO Ticket: Paging
-            // Modify the code you added in the Text and Subfield ticket to
-            // include pagination. Refer to the other methods in this class
-            // if you need a hint.
+                .Sort(sort)
+                .Limit(limit)
+                .Skip(page * limit)
+                .ToListAsync(cancellationToken);
         }
 
         /// <summary>
@@ -210,18 +212,11 @@ namespace M220N.Repositories
         /// <param name="page">The page to return</param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns>A MoviesByCastProjection object</returns>
-        public async Task<MoviesByCastProjection> GetMoviesCastFacetedAsync(string cast, int page = 0,
+        public async Task<MoviesByCastProjection> GetMoviesCastFacetedAsync(
+            string cast,
+            int page = 0,
             CancellationToken cancellationToken = default)
         {
-            /*
-               TODO Ticket: Faceted Search
-
-               We have already built the pipeline stages you need to perform a
-               faceted search on the Movies collection. Your task is to append the
-               facetStage, skipStage, and limitStage pipeline stages to the pipeline.
-               Think carefully about the order that these stages should be executed!
-           */
-
             // I match movies by cast members
             var matchStage = new BsonDocument("$match",
                 new BsonDocument("cast",
@@ -246,8 +241,8 @@ namespace M220N.Repositories
             {
                 matchStage,
                 sortStage,
-                // add the remaining stages in the correct order
-
+                skipStage,
+                facetStage
             };
 
             // I run the pipeline you built
