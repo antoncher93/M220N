@@ -32,7 +32,7 @@ namespace M220NTests
         }
 
         [Test]
-        public async Task TestCreatesNewUser()
+        public async Task  TestCreatesNewUser()
         {
             var user = new User { Name = "Test User 1", Email = "testuser1@mongodb.com", Password = "hdfn123?" };
 
