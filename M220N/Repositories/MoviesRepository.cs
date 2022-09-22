@@ -244,6 +244,7 @@ namespace M220N.Repositories
                 matchStage,
                 sortStage,
                 skipStage,
+                limitStage,
                 facetStage
             };
 
