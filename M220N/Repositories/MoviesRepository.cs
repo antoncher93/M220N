@@ -148,8 +148,8 @@ namespace M220N.Repositories
                 .Find(Builders<Movie>.Filter.Text(string.Join(",", keywords)))
                 .Project<MovieByTextProjection>(project)
                 .Sort(sort)
-                .Limit(limit)
                 .Skip(page * limit)
+                .Limit(limit)
                 .ToListAsync(cancellationToken);
         }
 
@@ -196,13 +196,15 @@ namespace M220N.Repositories
             params string[] genres)
         {
             var filter = Builders<Movie>.Filter.AnyIn(movie => movie.Genres, genres);
-            var sort = Builders<Movie>.Sort.Descending(movie => movie.Genres);
-            return await _moviesCollection
+            var sort = new BsonDocument(sortKey, DefaultSortOrder);
+            var result = await _moviesCollection
                 .Find(filter)
-                .Sort(sort)
                 .Limit(limit)
+                .Sort(sort)
                 .Skip(page * limit)
                 .ToListAsync(cancellationToken);
+
+            return result;
         }
 
         /// <summary>
