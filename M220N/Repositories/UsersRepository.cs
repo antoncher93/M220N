@@ -232,19 +232,23 @@ namespace M220N.Repositories
         /// <param name="preferences">The collection of preferences to set.</param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns></returns>
-        public async Task<UserResponse> SetUserPreferencesAsync(string email,
-            Dictionary<string, string> preferences, CancellationToken cancellationToken = default)
+        public async Task<UserResponse> SetUserPreferencesAsync(
+            string email,
+            Dictionary<string, string> preferences,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                /**
-                  Ticket: User Preferences
-            
-                  Update the "preferences" field in the corresponding user's document to
-                  reflect the new information in preferences.
-                */
+                var filter = Builders<User>.Filter.Eq(user => user.Email, email);
+                var update = Builders<User>.Update
+                    .Set(user => user.Preferences, preferences);
 
-                UpdateResult updateResult = null;
+                var updateResult = await _usersCollection.UpdateOneAsync(
+                    filter: filter,
+                    update: update,
+                    options: new UpdateOptions {IsUpsert = false},
+                    cancellationToken: cancellationToken);
+
                 // TODO Ticket: User Preferences
                 // Use the data in "preferences" to update the user's preferences.
                 //

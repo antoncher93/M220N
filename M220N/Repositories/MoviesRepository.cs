@@ -80,7 +80,9 @@ namespace M220N.Repositories
         /// <param name="movieId">The Id of the <see cref="Movie" /></param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns>The <see cref="Movie" /></returns>
-        public async Task<Movie> GetMovieAsync(string movieId, CancellationToken cancellationToken = default)
+        public async Task<Movie> GetMovieAsync(
+            string movieId,
+            CancellationToken cancellationToken = default)
         {
             try
             {
