@@ -127,7 +127,7 @@ namespace M220N.Repositories
                 .Find(searchFilter)
                 .Sort(sort)
                 .Project<MovieByCountryProjection>(projectionFilter)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         /// <summary>
