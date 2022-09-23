@@ -47,9 +47,9 @@ namespace M220N.Repositories
                     MovieId = movieId
                 };
 
-                // Ticket: Add a new Comment
-                // Implement InsertOneAsync() to insert a
-                // new comment into the comments collection.
+                await _commentsCollection.InsertOneAsync(
+                    document: newComment,
+                    cancellationToken: cancellationToken);
 
                 return await _moviesRepository.GetMovieAsync(movieId.ToString(), cancellationToken);
             }
@@ -68,8 +68,11 @@ namespace M220N.Repositories
         /// <param name="comment"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>An UpdateResult</returns>
-        public async Task<UpdateResult> UpdateCommentAsync(User user,
-            ObjectId movieId, ObjectId commentId, string comment,
+        public async Task<UpdateResult> UpdateCommentAsync(
+            User user,
+            ObjectId movieId,
+            ObjectId commentId,
+            string comment,
             CancellationToken cancellationToken = default)
         {
             // Ticket: Update a Comment
@@ -83,7 +86,19 @@ namespace M220N.Repositories
             // // new UpdateOptions { ... } ,
             // // cancellationToken);
 
-            return null;
+            var filter = Builders<Comment>.Filter
+                .Where(commentDoc => commentDoc.Id == commentId
+                                     && commentDoc.MovieId == movieId
+                                     && commentDoc.Email == user.Email);
+
+            var update = Builders<Comment>.Update
+                .Set(commentDoc => commentDoc.Text, comment);
+
+            return await _commentsCollection.UpdateOneAsync(
+                filter: filter,
+                update: update,
+                new UpdateOptions{IsUpsert = false},
+                cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -94,17 +109,18 @@ namespace M220N.Repositories
         /// <param name="user"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>The movie associated with the comment that is being deleted.</returns>
-        public async Task<Movie> DeleteCommentAsync(ObjectId movieId, ObjectId commentId,
-            User user, CancellationToken cancellationToken = default)
+        public async Task<Movie> DeleteCommentAsync(
+            ObjectId movieId,
+            ObjectId commentId,
+            User user,
+            CancellationToken cancellationToken = default)
         {
-            // Ticket: Delete a Comment
-            // Implement DeleteOne() to delete an
-            // existing comment. Remember that only the original
-            // comment owner can delete the comment!
-            _commentsCollection.DeleteOne(
-                Builders<Comment>.Filter.Where(
-                    c => c.MovieId == movieId
-                         && c.Id == commentId));
+            await _commentsCollection.DeleteOneAsync(
+                filter: Builders<Comment>.Filter.Where(
+                    expression: comment => comment.MovieId == movieId
+                                           && comment.Id == commentId
+                                           && comment.Email == user.Email),
+                cancellationToken: cancellationToken);
 
             return await _moviesRepository.GetMovieAsync(movieId.ToString(), cancellationToken);
         }

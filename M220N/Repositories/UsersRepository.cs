@@ -20,8 +20,13 @@ namespace M220N.Repositories
             var camelCaseConvention = new ConventionPack {new CamelCaseElementNameConvention()};
             ConventionRegistry.Register("CamelCase", camelCaseConvention, type => true);
 
-            _usersCollection = mongoClient.GetDatabase("sample_mflix").GetCollection<User>("users");
-            _sessionsCollection = mongoClient.GetDatabase("sample_mflix").GetCollection<Session>("sessions");
+            _usersCollection = mongoClient
+                .GetDatabase("sample_mflix")
+                .GetCollection<User>("users");
+            
+            _sessionsCollection = mongoClient
+                .GetDatabase("sample_mflix")
+                .GetCollection<Session>("sessions");
         }
 
         /*
@@ -48,13 +53,13 @@ namespace M220N.Repositories
         /// <param name="email">The Email of the User</param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns>A User or null</returns>
-        public async Task<User> GetUserAsync(string email, CancellationToken cancellationToken = default)
+        public async Task<User> GetUserAsync(
+            string email,
+            CancellationToken cancellationToken = default)
         {
-            // TODO Ticket: User Management
-            // Retrieve the user document corresponding with the user's email.
-            //
-            // // return await _usersCollection.Find(...)
-            return null;
+            var filter = Builders<User>.Filter.Eq(user => user.Email, email);
+            return await _usersCollection.Find(filter)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         /// <summary>
@@ -65,12 +70,20 @@ namespace M220N.Repositories
         /// <param name="password">The clear-text password, which will be hashed before storing.</param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns></returns>
-        public async Task<UserResponse> AddUserAsync(string name, string email, string password,
+        public async Task<UserResponse> AddUserAsync(
+            string name,
+            string email,
+            string password,
             CancellationToken cancellationToken = default)
         {
             try
             {
-                var user = new User();
+                var user = new User()
+                {
+                    Name = name,
+                    Email = email,
+                    HashedPassword = PasswordHashOMatic.Hash(password),
+                };
                 // TODO Ticket: User Management
                 // Create a user with the "Name", "Email", and "HashedPassword" fields.
                 // DO NOT STORE CLEAR-TEXT PASSWORDS! Instead, use the helper class
@@ -82,6 +95,8 @@ namespace M220N.Repositories
                 // // TODO Ticket: Durable Writes
                 // // To use a more durable Write Concern for this operation, add the 
                 // // .WithWriteConcern() method to your InsertOneAsync call.
+
+                await _usersCollection.InsertOneAsync(user, cancellationToken: cancellationToken);
 
                 var newUser = await GetUserAsync(user.Email, cancellationToken);
                 return new UserResponse(newUser);
@@ -100,7 +115,9 @@ namespace M220N.Repositories
         /// <param name="user">The User to add.</param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns></returns> 
-        public async Task<UserResponse> LoginUserAsync(User user, CancellationToken cancellationToken = default)
+        public async Task<UserResponse> LoginUserAsync(
+            User user,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -117,6 +134,16 @@ namespace M220N.Repositories
                 {
                     return new UserResponse(false, "The password provided is not valid");
                 }
+
+                var filter = Builders<Session>.Filter.Eq(session => session.UserId, storedUser.Id);
+                var updateFilter = Builders<Session>.Update
+                    .Set(session => session.Jwt, user.AuthToken);
+                
+                await _sessionsCollection.UpdateOneAsync(
+                    filter: filter,
+                    update: updateFilter,
+                    options: new UpdateOptions{IsUpsert = true},
+                    cancellationToken: cancellationToken);
 
                 // TODO Ticket: User Management
                 // Locate the session object in the `sessions` collection by
@@ -205,19 +232,23 @@ namespace M220N.Repositories
         /// <param name="preferences">The collection of preferences to set.</param>
         /// <param name="cancellationToken">Allows the UI to cancel an asynchronous request. Optional.</param>
         /// <returns></returns>
-        public async Task<UserResponse> SetUserPreferencesAsync(string email,
-            Dictionary<string, string> preferences, CancellationToken cancellationToken = default)
+        public async Task<UserResponse> SetUserPreferencesAsync(
+            string email,
+            Dictionary<string, string> preferences,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                /**
-                  Ticket: User Preferences
-            
-                  Update the "preferences" field in the corresponding user's document to
-                  reflect the new information in preferences.
-                */
+                var filter = Builders<User>.Filter.Eq(user => user.Email, email);
+                var update = Builders<User>.Update
+                    .Set(user => user.Preferences, preferences);
 
-                UpdateResult updateResult = null;
+                var updateResult = await _usersCollection.UpdateOneAsync(
+                    filter: filter,
+                    update: update,
+                    options: new UpdateOptions {IsUpsert = false},
+                    cancellationToken: cancellationToken);
+
                 // TODO Ticket: User Preferences
                 // Use the data in "preferences" to update the user's preferences.
                 //

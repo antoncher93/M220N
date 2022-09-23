@@ -20,7 +20,7 @@ namespace Migrator
         // TODO: Update this connection string as needed.
         static string mongoConnectionString = "";
         
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             Setup();
 
