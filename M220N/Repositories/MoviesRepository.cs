@@ -87,13 +87,14 @@ namespace M220N.Repositories
             try
             {
                 return await _moviesCollection.Aggregate()
-                    .Match(Builders<Movie>.Filter.Eq(x => x.Id, movieId))
-                    // Ticket: Get Comments
-                    // Add a lookup stage that includes the
-                    // comments associated with the retrieved movie
+                    .Match(Builders<Movie>.Filter.Eq(movie => movie.Id, movieId))
+                    .Lookup(
+                        foreignCollection: _commentsCollection,
+                        localField: movie => movie.Id,
+                        foreignField: comment => comment.MovieId,
+                        (Movie movie) => movie.Comments)
                     .FirstOrDefaultAsync(cancellationToken);
             }
-
             catch (Exception ex)
             {
                 // TODO Ticket: Error Handling
