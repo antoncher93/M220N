@@ -11,7 +11,9 @@ namespace M220N.Repositories
             servicesBuilder.AddSingleton<IMongoClient, MongoClient>(s =>
             {
                 var uri = s.GetRequiredService<IConfiguration>()["MongoUri"];
-                return new MongoClient(uri);
+                var client = new MongoClient(uri);
+                client.Settings.MaxConnectionPoolSize = 50;
+                return client;
             });
             servicesBuilder.AddSingleton<MoviesRepository>();
             servicesBuilder.AddSingleton<UsersRepository>();
